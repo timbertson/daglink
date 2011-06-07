@@ -80,7 +80,11 @@ class DagLink(object):
 					" ".join(all_tags),))
 				continue
 			if self.opts.report:
-				self._report(path)
+				try:
+					self._report(path)
+				except Skipped:
+					logging.error("couldn't show %s" % (path,))
+					continue
 				continue
 			assert len(values) == 1, "Too many applicable directives for path %s:\n%s" % (
 					path,
@@ -98,7 +102,7 @@ class DagLink(object):
 			return skipped
 
 	def _report(self, path):
-		self._run(['ls','-l',path], try_root=False)
+		self._run(['ls','-l', self._abs(path)], try_root=False)
 
 	def _apply_directive(self, path, directive, resolve):
 		local_path = directive.get('path', None)
@@ -116,8 +120,11 @@ class DagLink(object):
 			path = os.path.join(path, *extract.split('/'))
 		return path
 
+	def _abs(self, path):
+		return os.path.abspath(os.path.expanduser(path))
+
 	def _link(self, path, target):
-		target = os.path.abspath(os.path.expanduser(target))
+		target = self._abs(target)
 		if self.opts.dry_run:
 			print "%s -> %s" % (path, target)
 			return
