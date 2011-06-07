@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type='text/xsl' href='interface.xsl'?>
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface" uri="http://gfxmonk.net/dist/0install/daglink.xml">
+	<name>daglink</name>
+	<summary>symlink management</summary>
+	<description>
+	Configure &amp; update symlinks
+	</description>
+	<homepage>https://github.com/gfxmonk/daglink</homepage>
+	<group main="daglink.py">
+		<command name="run" path="daglink.py">
+			<runner interface="http://repo.roscidus.com/python/python"/>
+		</command>
+		<requires interface="http://gfxmonk.net/dist/0install/pyyaml-python2.xml"/>
+		<environment insert="" mode="prepend" name="PYTHONPATH"/>
+		<environment insert="" mode="prepend" name="PATH"/>
+		<implementation id="sha1new=a5eb1bec7f4e260314cc42155be762019cf2bfe2" released="2011-06-07" version="0.1">
+			<manifest-digest sha256="9627630aec1e9b37b855cc49281c08bec27489439bedc3e057df004aa0da0573"/>
+			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.1.tgz" size="2198"/>
+		</implementation>
+	</group>
+</interface>
