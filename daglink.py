@@ -69,7 +69,8 @@ class DagLink(object):
 
 		default_tags = meta.get(self.DEFAULT_TAGS, None)
 		if len(tags) == 0 and default_tags:
-			hostname = os.uname()[1]
+			import platform
+			hostname = platform.node()
 			hostname_tags = default_tags.get(hostname, None)
 			if hostname_tags:
 				tags = set(hostname_tags)
