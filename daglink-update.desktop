@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Daglink update
+Comment=Update user-configured symlinks
+Exec=0launch http://gfxmonk.net/dist/0install/daglink.xml -f
+Type=Application
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+

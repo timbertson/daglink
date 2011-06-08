@@ -7,7 +7,7 @@ import logging
 
 def main():
 	p = OptionParser(usage='%prog [options] [tag1 [tag2 [...]]]')
-	p.add_option('-c', '--config', default=os.path.expanduser('~/.config/daglink/conf'))
+	p.add_option('-c', '--config', default=os.path.expanduser('~/.config/daglink/links.yml'), help="config YAML file (default=%default)")
 	p.add_option('-f', '--force', action='store_true', help='Just do it, removing existing files, creating nonexistant directories, etc')
 	p.add_option('-i', '--interactive', action='store_true', help='like --force, but ask')
 	p.add_option('-t', '--tags', action='store_true', help='list all available tags')
@@ -16,17 +16,18 @@ def main():
 	p.add_option('--info', action='store_const', dest='log_level', default=logging.INFO, const=logging.INFO, help='verbose')
 	p.add_option('-n', '--dry-run', action='store_true', help='print all links that would be created')
 	p.add_option('-r', '--report', action='store_true', help='run ls -l on all paths')
+	p.add_option('--remove', action='store_true', help='remove all files that have been linked')
+	p.add_option('--sudo', help='sudo implementation (e.g sudo, pkexec, gksudo)', default=None)
 	p.add_option('-b', '--base', help='base directory')
 	opts, tags = p.parse_args()
-	logging.basicConfig(level=opts.log_level, format="%(message)s")
+	logging.basicConfig(level=opts.log_level, format="daglink: %(message)s")
 	tags = set(tags)
 	dag = DagLink(opts)
 	conf = dag.load_file(opts.config)
-	if opts.base:
-		os.chdir(os.path.expanduser(opts.base))
+
 	if opts.tags:
 		tags = set()
-		for dir, vals in dag.each_item(conf):
+		for dir, vals in sorted(dag.each_item(conf)):
 			for directive in vals:
 				if 'tags' in directive:
 					tags.update(directive['tags'].split())
@@ -38,7 +39,9 @@ class Skipped(RuntimeError): pass
 
 class DagLink(object):
 	ZEROINSTALL_ALIASES = 'zeroinstall_aliases'
-	DEFAULT_TAG = '__default__'
+	DEFAULT_TAGS = 'default_tags'
+	BASEDIR = 'basedir'
+
 	def __init__(self, opts):
 		self.opts = opts
 	
@@ -50,14 +53,37 @@ class DagLink(object):
 		self.process(self.load_file(filename), tags)
 
 	def each_item(self, conf):
-		for path, values in conf.items():
+		for path, values in sorted(conf.items()):
+			if path.startswith('_'):
+				continue
 			if isinstance(values, dict):
 				values = [values]
 			yield path, values
 
+	def _load_meta(self, conf, tags):
+		"""load options defined in the config file itself"""
+		meta = conf.pop('meta', {})
+		aliases = meta.get(self.ZEROINSTALL_ALIASES, {})
+		config_basedir = meta.get(self.BASEDIR, None)
+		basedir = self.opts.base or config_basedir
+
+		default_tags = meta.get(self.DEFAULT_TAGS, None)
+		if len(tags) == 0 and default_tags:
+			hostname = os.uname()[1]
+			hostname_tags = default_tags.get(hostname, None)
+			if hostname_tags:
+				tags = set(hostname_tags)
+		logging.info("using tags: %s" % (" ".join(sorted(tags)),))
+
+		if basedir:
+			logging.debug("using basedir: %s" % (basedir,))
+			os.chdir(os.path.expanduser(basedir))
+		return (tags, aliases)
+
 	def process(self, conf, tags):
-		skipped = 0
-		aliases = conf.pop(self.ZEROINSTALL_ALIASES, {})
+		tags, aliases = self._load_meta(conf, tags)
+		skipped = []
+		num_paths = 0
 		def resolve(value):
 			return aliases.get(value, value)
 
@@ -79,41 +105,56 @@ class DagLink(object):
 				logging.debug("no applicable directives found (you did not specify any tags in: %s)" % (
 					" ".join(all_tags),))
 				continue
-			if self.opts.report:
-				try:
-					self._report(path)
-				except Skipped:
-					logging.error("couldn't show %s" % (path,))
-					continue
-				continue
-			assert len(values) == 1, "Too many applicable directives for path %s:\n%s" % (
-					path,
-					"\n".join(map(repr, values)))
-			directive = values[0]
+			num_paths += 1
+			path = self._abs(path)
 
-			path = os.path.expanduser(path)
 			try:
-				self._apply_directive(path, directive, resolve)
+				if self.opts.report or self.opts.remove:
+					# path-level operations
+					if self.opts.report:
+						self._report(path)
+					elif self.opts.remove:
+						self._remove(path)
+					else:
+						assert False, "invalid state!"
+					continue
+				else:
+					assert len(values) == 1, "Too many applicable directives for path %s:\n%s" % (
+							path,
+							"\n".join(map(repr, values)))
+					directive = values[0]
+					self._apply_directive(path, directive, resolve)
 			except Skipped:
-				skipped += 1
+				skipped.append(path)
 				pass
+		logging.info("%s paths successfully processed" % (num_paths,))
 		if skipped:
-			logging.error("skipped %s directives" % (skipped,))
-			return skipped
+			logging.error("skipped %s paths:\n   %s" % (len(skipped),"\n   ".join(skipped)))
+			return len(skipped)
+		else:
+			os.utime(self.opts.config, None)
+
+	def _remove(self, path):
+		if self.opts.dry_run:
+			print "rm %s" % (path,)
+			return
+		self._run(['rm', path])
 
 	def _report(self, path):
-		self._run(['ls','-l', self._abs(path)], try_root=False)
+		self._run(['ls','-l', path], try_root=False)
 
 	def _apply_directive(self, path, directive, resolve):
 		local_path = directive.get('path', None)
 		if local_path:
-			target = os.path.abspath(os.path.realpath(local_path))
+			target = local_path
 		else:
 			target = self._resolve_0install_path(resolve(directive['uri']), directive.get('extract', None))
+		target = self._abs(target)
 		self._link(path, target)
 	
 	def _resolve_0install_path(self, uri, extract=None):
 		import zerofind
+		#TODO: check for updates?
 		path = zerofind.find(uri)
 		assert path
 		if extract:
@@ -124,15 +165,14 @@ class DagLink(object):
 		return os.path.abspath(os.path.expanduser(path))
 
 	def _link(self, path, target):
-		target = self._abs(target)
 		if self.opts.dry_run:
 			print "%s -> %s" % (path, target)
 			return
 		basedir = os.path.dirname(path)
 		if not os.path.exists(basedir):
-			self._permission('make directories to %s' % (basedir,))
+			self._permission('make directory at path %s' % (basedir,))
 			self._run(['mkdir', '-p', basedir])
-		assert os.path.exists(target), "ERROR: non-existant target: %s" % (path,)
+		assert os.path.exists(target), "ERROR: non-existant target: %s" % (target,)
 		if os.path.islink(path):
 			if os.readlink(path) == target:
 				logging.debug("link at %s already points to %s; nothing to do..." % (path, target))
@@ -166,9 +206,22 @@ class DagLink(object):
 		except subprocess.CalledProcessError:
 			if try_root:
 				self._permission('run "%s" as root' % (' '.join(cmd),))
-				subprocess.check_call(['sudo'] + cmd)
+				subprocess.check_call(self._sudo_cmd() + ['--'] + cmd)
 			else:
 				raise Skipped()
+
+	def _sudo_cmd(self):
+		if self.opts.sudo:
+			return self.opts.sudo.split()
+		else:
+			return self._graphical_sudo()
+	
+	def _graphical_sudo(self):
+		if os.system('which pkexec >/dev/null 2>&1') == 0:
+			return ['pkexec']
+		else:
+			return ['gksudo']
+
 
 if __name__ == '__main__':
 	try:
