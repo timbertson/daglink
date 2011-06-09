@@ -12,6 +12,11 @@
     - e.g link a different /etc/apt.sources.list depending on distribution version
  - you want a tool that is so meta, it can install itself
 
+## What does it do?
+
+daglink makes symbolic links. The main usage is linking various well-known paths to somewhere within a self-contained config directory. E.g. you can keep all your settings in ~/dev/config, and creates links to files / folders within it from e.g /etc/apt/sources.list.d, /etc/sessions.d, ~/.vimrc.
+
+Really it can be used for any configuration that requires well-known paths and you wish to store the contents of such files in a place of your choosing.
 
 ## Configuration:
 
@@ -96,3 +101,7 @@ If you want to use daglink to update your symlinks automaically, you'll want to 
           - xkb
 
 For a complete example config, feel free to peek at my own configuration: https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml
+
+## Usage:
+
+(todo...)
