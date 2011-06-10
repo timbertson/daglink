@@ -100,7 +100,7 @@ If you want to use daglink to update your symlinks automaically, you'll want to 
           - fedora-15
           - xkb
 
-For a complete example config, feel free to peek at my own configuration: https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml
+For a complete example config, feel free to peek at my own configuration: <https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml>
 
 ## Usage:
 
