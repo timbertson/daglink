@@ -37,7 +37,7 @@ You probably don't want to link the same things to the same places on every comp
       path: ~/config/whatever-config
       tags: home
 
-(`tags` is a space-separated list, the directive will be applied if you have specified any of the given tags)
+(`tags` is a space-separated list, the directive will be applied if you have specified all of the given tags)
 
 To specify multiple targets for a single location, use a list:
 

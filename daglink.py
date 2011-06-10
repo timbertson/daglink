@@ -92,7 +92,7 @@ class DagLink(object):
 			directive_tags = directive.get('tags', '').split()
 			if not directive_tags:
 				return True
-			return len(set(directive_tags).intersection(tags)) > 0
+			return set(directive_tags).issubset(tags)
 
 		if '*' in tags:
 			should_include_directive = lambda *a: True
