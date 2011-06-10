@@ -104,4 +104,4 @@ For a complete example config, feel free to peek at my own configuration: https:
 
 ## Usage:
 
-(todo...)
+    0launch http://gfxmonk.net/dist/0install/daglink.xml --help

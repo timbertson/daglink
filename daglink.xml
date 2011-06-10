@@ -4,9 +4,214 @@
 	<name>daglink</name>
 	<summary>symlink management</summary>
 	<description>
-	Configure &amp; update symlinks
+# daglink
+..because trees are boring
+
+### Why would you need this?
+
+ - You have customised a lot of files in your system
+ - you want to keep them in a central location, in order to:
+    - back them up easily
+    - keep track of them
+    - (maybe) version control them
+ - you want to link different things into different (or the same) locations depending on hostname
+    - e.g link a different /etc/apt.sources.list depending on distribution version
+ - you want a tool that is so meta, it can install itself
+
+## What does it do?
+
+daglink makes symbolic links. The main usage is linking various well-known paths to somewhere within a self-contained config directory. E.g. you can keep all your settings in ~/dev/config, and creates links to files / folders within it from e.g /etc/apt/sources.list.d, /etc/sessions.d, ~/.vimrc.
+
+Really it can be used for any configuration that requires well-known paths and you wish to store the contents of such files in a place of your choosing.
+
+## Configuration:
+
+All the configuration is in one file, that is by default searched for in `~/.config/daglink/links.yml`. But you can use `-c` to provide your own config path.
+
+The basic entry looks like this:
+
+    /etc/path/to/wherever:
+      path: ~/config/whatever-config
+
+This will link `/etc/path/to/wherever` to `~/config/whatever-config`. You can use relative paths as the `path` value, they are taken from the current directory (or from the `--base` option).
+
+### Tags:
+
+You probably don't want to link the same things to the same places on every computer you use. For this, you can use tags. To specify that a directive only applies for a given tag, you can use:
+
+    /etc/path/to/wherever:
+      path: ~/config/whatever-config
+      tags: home
+
+(`tags` is a space-separated list, the directive will be applied if you have specified any of the given tags)
+
+To specify multiple targets for a single location, use a list:
+
+    /etc/path/to/wherever:
+      - path: ~/config/whatever-config
+        tags: home
+      - path: ~/config/whatever-config
+        tags: home
+
+**Note**: this will fail if more than one directive matches the provided set of tags, as that would be impossible to do.
+
+### zero install
+
+If you love zero-install (I do), you can use daglink to make sure a location contains the latest version of a given feed. For example, you can add daglink itself to run whenever you login with this rather self-referential entry:
+
+    ~/.config/autostart/daglink-update.desktop:
+      uri: http://gfxmonk.net/dist/0install/daglink.xml
+      extract: daglink-update.desktop
+
+Since you can't provide command-line arguments to that startup item, you will also need to make sure your config file can be found at `~/.config/daglink/links.yml`. By now you can probably guess how I suggest you do that:
+
+    ~/.config/daglink/links.yml:
+      path: links.yml
+
+The beauty of this is that if you have a development version of daglink registered for that interface it will be used, otherwise it'll be cached from the internet and updated periodically, just like any other zero install feed. There aren't many cases where it's a good idea to keep symlinks of 0install implementations around, but I think symlinks to desktop items can be quite useful - especially if you want to take this configuration to a new machine.
+
+## Meta:
+
+You can provide more than just paths in the configuration. There is a `meta` section which allows you to specify:
+
+#### zero install aliases
+
+If you're going to use the same uri over and over again, this allows you to define an alias. E.g:
+
+    meta:
+      zeroinstall_aliases:
+        config: http://example.com/0install/my-config.xml
+
+    ~/.vimrc:
+      uri: config
+      extract: vimrc
+
+#### default basedir
+
+If you don't specify --basedir, daglink will take the base directory form the meta section (if it exists):
+
+    meta:
+      basedir: ~/dev/config
+
+#### default tags per-hostname
+
+If you want to use daglink to update your symlinks automaically, you'll want to put per-machine tags in your config. These tags are only used if you don't specify any tags on the command line itself:
+
+    meta:
+      default_tags:
+        host1:
+          - ubuntu-maverick
+          - xmodmap
+        host2:
+          - fedora-15
+          - xkb
+
+For a complete example config, feel free to peek at my own configuration: https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml
+
+## Usage:
+
+    0launch http://gfxmonk.net/dist/0install/daglink.xml --help
 	</description>
 	<homepage>https://github.com/gfxmonk/daglink</homepage>
+	<rich-description xmlns="http://gfxmonk.net/dist/0install">
+		<div xmlns="http://www.w3.org/1999/xhtml">
+			<h1 id="daglink">daglink</h1>
+			<p>..because trees are boring</p>
+			<h3 id="why-would-you-need-this">Why would you need this?</h3>
+			<ul>
+				<li>You have customised a lot of files in your system</li>
+				<li>you want to keep them in a central location, in order to:<ul><li>back them up easily</li><li>keep track of them</li><li>(maybe) version control them</li></ul></li>
+				<li>you want to link different things into different (or the same) locations depending on hostname<ul><li>e.g link a different /etc/apt.sources.list depending on distribution version</li></ul></li>
+				<li>you want a tool that is so meta, it can install itself</li>
+			</ul>
+			<h2 id="what-does-it-do">What does it do?</h2>
+			<p>daglink makes symbolic links. The main usage is linking various well-known paths to somewhere within a self-contained config directory. E.g. you can keep all your settings in ~/dev/config, and creates links to files / folders within it from e.g /etc/apt/sources.list.d, /etc/sessions.d, ~/.vimrc.</p>
+			<p>Really it can be used for any configuration that requires well-known paths and you wish to store the contents of such files in a place of your choosing.</p>
+			<h2 id="configuration">Configuration:</h2>
+			<p>All the configuration is in one file, that is by default searched for in <code>~/.config/daglink/links.yml</code>. But you can use <code>-c</code> to provide your own config path.</p>
+			<p>The basic entry looks like this:</p>
+			<pre>
+				<code>/etc/path/to/wherever:
+  path: ~/config/whatever-config
+</code>
+			</pre>
+			<p>This will link <code>/etc/path/to/wherever</code> to <code>~/config/whatever-config</code>. You can use relative paths as the <code>path</code> value, they are taken from the current directory (or from the <code>--base</code> option).</p>
+			<h3 id="tags">Tags:</h3>
+			<p>You probably don't want to link the same things to the same places on every computer you use. For this, you can use tags. To specify that a directive only applies for a given tag, you can use:</p>
+			<pre>
+				<code>/etc/path/to/wherever:
+  path: ~/config/whatever-config
+  tags: home
+</code>
+			</pre>
+			<p>(<code>tags</code> is a space-separated list, the directive will be applied if you have specified any of the given tags)</p>
+			<p>To specify multiple targets for a single location, use a list:</p>
+			<pre>
+				<code>/etc/path/to/wherever:
+  - path: ~/config/whatever-config
+    tags: home
+  - path: ~/config/whatever-config
+    tags: home
+</code>
+			</pre>
+			<p><strong>Note</strong>: this will fail if more than one directive matches the provided set of tags, as that would be impossible to do.</p>
+			<h3 id="zero-install">zero install</h3>
+			<p>If you love zero-install (I do), you can use daglink to make sure a location contains the latest version of a given feed. For example, you can add daglink itself to run whenever you login with this rather self-referential entry:</p>
+			<pre>
+				<code>~/.config/autostart/daglink-update.desktop:
+  uri: http://gfxmonk.net/dist/0install/daglink.xml
+  extract: daglink-update.desktop
+</code>
+			</pre>
+			<p>Since you can't provide command-line arguments to that startup item, you will also need to make sure your config file can be found at <code>~/.config/daglink/links.yml</code>. By now you can probably guess how I suggest you do that:</p>
+			<pre>
+				<code>~/.config/daglink/links.yml:
+  path: links.yml
+</code>
+			</pre>
+			<p>The beauty of this is that if you have a development version of daglink registered for that interface it will be used, otherwise it'll be cached from the internet and updated periodically, just like any other zero install feed. There aren't many cases where it's a good idea to keep symlinks of 0install implementations around, but I think symlinks to desktop items can be quite useful - especially if you want to take this configuration to a new machine.</p>
+			<h2 id="meta">Meta:</h2>
+			<p>You can provide more than just paths in the configuration. There is a <code>meta</code> section which allows you to specify:</p>
+			<h4 id="zero-install-aliases">zero install aliases</h4>
+			<p>If you're going to use the same uri over and over again, this allows you to define an alias. E.g:</p>
+			<pre>
+				<code>meta:
+  zeroinstall_aliases:
+    config: http://example.com/0install/my-config.xml
+
+~/.vimrc:
+  uri: config
+  extract: vimrc
+</code>
+			</pre>
+			<h4 id="default-basedir">default basedir</h4>
+			<p>If you don't specify --basedir, daglink will take the base directory form the meta section (if it exists):</p>
+			<pre>
+				<code>meta:
+  basedir: ~/dev/config
+</code>
+			</pre>
+			<h4 id="default-tags-per-hostname">default tags per-hostname</h4>
+			<p>If you want to use daglink to update your symlinks automaically, you'll want to put per-machine tags in your config. These tags are only used if you don't specify any tags on the command line itself:</p>
+			<pre>
+				<code>meta:
+  default_tags:
+    host1:
+      - ubuntu-maverick
+      - xmodmap
+    host2:
+      - fedora-15
+      - xkb
+</code>
+			</pre>
+			<p>For a complete example config, feel free to peek at my own configuration: https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml</p>
+			<h2 id="usage">Usage:</h2>
+			<pre>
+				<code>0launch http://gfxmonk.net/dist/0install/daglink.xml --help
+</code>
+			</pre>
+		</div>
+	</rich-description>
 	<group main="daglink.py">
 		<command name="run" path="daglink.py">
 			<runner interface="http://repo.roscidus.com/python/python"/>
@@ -24,6 +229,10 @@
 		<implementation id="sha1new=52b628424616a9de4453c426a5042d783c2133c9" released="2011-06-08" version="0.1.1">
 			<manifest-digest sha256="238085640d3b7af69133b5d095d68f01cec768d7b8a569575645ecc2bffaced8"/>
 			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.1.1.tgz" size="3085"/>
+		</implementation>
+		<implementation id="sha1new=d42687c16ac097220750fa9222eac12bfdd6e2cb" released="2011-06-10" version="0.1.2">
+			<manifest-digest sha256="36271327f00b7fff6b1c7b51742659b0fc0b63be4b297adb27169d94d1309591"/>
+			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.1.2.tgz" size="3151"/>
 		</implementation>
 	</group>
 </interface>
