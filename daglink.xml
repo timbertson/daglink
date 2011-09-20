@@ -214,7 +214,9 @@ For a complete example config, feel free to peek at my own configuration: &lt;ht
 	</rich-description>
 	<group main="daglink.py">
 		<command name="run" path="daglink.py">
-			<runner interface="http://repo.roscidus.com/python/python"/>
+			<runner interface="http://repo.roscidus.com/python/python">
+				<version before="3"/>
+			</runner>
 		</command>
 		<requires interface="http://gfxmonk.net/dist/0install/pyyaml-python2.xml"/>
 		<requires interface="http://gfxmonk.net/dist/0install/0find.xml">
