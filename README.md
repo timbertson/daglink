@@ -42,10 +42,10 @@ You probably don't want to link the same things to the same places on every comp
 To specify multiple targets for a single location, use a list:
 
     /etc/path/to/wherever:
-      - path: ~/config/whatever-config
+      - path: ~/config/home-config
         tags: home
-      - path: ~/config/whatever-config
-        tags: home
+      - path: ~/config/work-config
+        tags: work
 
 **Note**: this will fail if more than one directive matches the provided set of tags, as that would be impossible to do.
 
