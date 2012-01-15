@@ -5,6 +5,13 @@ import yaml
 from optparse import OptionParser
 import logging
 
+def xattr(*a, **k):
+	try:
+		from xattr import xattr
+		return xattr(*a, **k)
+	except ImportError:
+		raise RuntimeError("xattr not found: --disable-xattr")
+
 def main():
 	p = OptionParser(usage='%prog [options] [tag1 [tag2 [...]]]')
 	p.add_option('-c', '--config', default=os.path.expanduser('~/.config/daglink/links.yml'), help="config YAML file (default=%default)")
@@ -16,7 +23,8 @@ def main():
 	p.add_option('--info', action='store_const', dest='log_level', default=logging.INFO, const=logging.INFO, help='info log level (the default)')
 	p.add_option('-n', '--dry-run', action='store_true', help='print all links that would be created')
 	p.add_option('-r', '--report', action='store_true', help='run ls -l on all paths')
-	p.add_option('--remove', action='store_true', help='remove all files that have been linked')
+	p.add_option('--clean', action='store_true', help='thoroughly clean all links that daglink has ever created (warning: scans entire hard drive unless --quick is also specified)')
+	p.add_option('--quick', action='store_true', help='when supplied with --clean, only check paths listed in the current config')
 	p.add_option('--sudo', help='sudo implementation (e.g sudo, pkexec, gksudo)', default=None)
 	p.add_option('-b', '--base', help='base directory')
 	opts, tags = p.parse_args()
@@ -32,6 +40,8 @@ def main():
 				if 'tags' in directive:
 					tags.update(directive['tags'].split())
 		print "\n".join(sorted(tags))
+	elif opts.clean:
+		return dag.clean(conf)
 	else:
 		return dag.process(conf, tags=tags)
 
@@ -41,6 +51,8 @@ class DagLink(object):
 	ZEROINSTALL_ALIASES = 'zeroinstall_aliases'
 	DEFAULT_TAGS = 'default_tags'
 	BASEDIR = 'basedir'
+	DAGLINK_XATTR_KEY = 'user.net.gfxmonk.daglink.islink'
+	DAGLINK_XATTR_VALUE = 'true'
 
 	def __init__(self, opts):
 		self.opts = opts
@@ -81,22 +93,43 @@ class DagLink(object):
 			os.chdir(os.path.expanduser(basedir))
 		return (tags, aliases)
 
-	def process(self, conf, tags):
+	def _is_daglinked(self, file):
+		xattr(file).has_key(self.DAGLINK_XATTR_KEY)
+
+	def _mark_daglinked(self, file):
+		xattr(file)[self.DAGLINK_XATTR_KEY] = self.DAGLINK_XATTR_VALUE
+	
+	def clean(self, conf):
+		for path in self._file_scan(conf):
+			if self._is_daglinked(path):
+				print "Found linked file at: %s" % (path,)
+				if self.opts.report:
+					self._report(path)
+				else:
+					self._remove(path)
+	
+	def _file_scan(self, conf):
+		if self.opts.quick:
+			for path, values in self.each_item(conf):
+				yield self._abs(path)
+		else:
+			for root, dirs, files in os.walk('/', followlinks=False):
+				for file in files:
+					path = os.path.join(root, file)
+					if os.path.islink(path):
+						yield self._abs(path)
+
+	def each_applicable_directive(self, conf, tags):
 		tags, aliases = self._load_meta(conf, tags)
-		skipped = []
-		num_paths = 0
 		def resolve(value):
 			return aliases.get(value, value)
-
 		def should_include_directive(directive):
 			directive_tags = directive.get('tags', '').split()
 			if not directive_tags:
 				return True
 			return set(directive_tags).issubset(tags)
-
 		if '*' in tags:
 			should_include_directive = lambda *a: True
-
 		for path, values in self.each_item(conf):
 			logging.debug("Processing path: %s" % (path,))
 
@@ -106,18 +139,19 @@ class DagLink(object):
 				logging.debug("no applicable directives found (you did not specify any tags in: %s)" % (
 					" ".join(all_tags),))
 				continue
-			num_paths += 1
 			path = self._abs(path)
+			yield path, values
 
+	def process(self, conf, tags):
+		skipped = []
+		num_paths = 0
+
+		for path, values in self.each_applicable_directive(conf, tags):
+			num_paths += 1
 			try:
-				if self.opts.report or self.opts.remove:
-					# path-level operations
-					if self.opts.report:
-						self._report(path)
-					elif self.opts.remove:
-						self._remove(path)
-					else:
-						assert False, "invalid state!"
+				if self.opts.report:
+					# path-level operation
+					self._report(path)
 					continue
 				else:
 					assert len(values) == 1, "Too many applicable directives for path %s:\n%s" % (
@@ -143,7 +177,7 @@ class DagLink(object):
 
 	def _report(self, path):
 		self._run(['ls','-l', path], try_root=False)
-
+	
 	def _apply_directive(self, path, directive, resolve):
 		local_path = directive.get('path', None)
 		if local_path:
