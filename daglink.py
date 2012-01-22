@@ -3,14 +3,15 @@ import os, sys
 import subprocess
 import yaml
 from optparse import OptionParser
+from operator import methodcaller as method
 import logging
 
 def xattr(*a, **k):
 	try:
-		from xattr import xattr
-		return xattr(*a, **k)
+		import xattr
+		return xattr.xattr(*a, options=xattr.XATTR_NOFOLLOW, **k)
 	except ImportError:
-		raise RuntimeError("xattr not found: --disable-xattr")
+		raise RuntimeError("xattr not found: TODO: implement --disable-xattr")
 
 def main():
 	p = OptionParser(usage='%prog [options] [tag1 [tag2 [...]]]')
@@ -33,19 +34,70 @@ def main():
 	dag = DagLink(opts)
 	conf = dag.load_file(opts.config)
 
-	if opts.tags:
-		tags = set()
-		for dir, vals in sorted(dag.each_item(conf)):
-			for directive in vals:
-				if 'tags' in directive:
-					tags.update(directive['tags'].split())
-		print "\n".join(sorted(tags))
-	elif opts.clean:
-		return dag.clean(conf)
-	else:
-		return dag.process(conf, tags=tags)
+	try:
+		if opts.tags:
+			tags = set()
+			for dir, vals in sorted(dag.each_item(conf)):
+				for directive in vals:
+					if 'tags' in directive:
+						tags.update(directive['tags'].split())
+			print "\n".join(sorted(tags))
+		elif opts.clean:
+			return dag.clean(conf)
+		else:
+			return dag.process(conf, tags=tags)
+	finally:
+		dag.close()
 
 class Skipped(RuntimeError): pass
+
+class KnownLinks(object):
+	def __init__(self, path):
+		try:
+			self.file = open(path, 'r+')
+		except IOError:
+			base = os.path.dirname(path)
+			if not os.path.isdir(base):
+				os.makedirs(base)
+			self.file = open(path, 'w')
+			self.paths = set()
+		else:
+			self.paths = self._entries(self.file.readlines())
+		self.orig_paths = self.paths.copy()
+		logging.debug("loaded %s known paths" % (path,))
+	
+	def _entries(self, lines):
+		stripped = map(method('strip'), lines)
+		self.file.seek(0)
+		return set(filter(None, stripped))
+
+	def add(self, path):
+		logging.debug("adding known path: %s" % (path,))
+		self.paths.add(path)
+
+	def remove(self, path):
+		logging.debug("removing known path: %s" % (path,))
+		try:
+			self.paths.remove(path)
+		except KeyError: pass
+	
+	def close(self):
+		if self.orig_paths != self.paths:
+			self.write()
+		self.file.close()
+		self.file = None
+	
+	def write(self):
+		lines = sorted(self.paths)
+		logging.debug("writing %s paths to known_links" % (len(self.paths),))
+		print >> self.file, ('\n'.join(lines))
+	
+	def __iter__(self):
+		return iter(self.paths)
+
+	def __len__(self):
+		return len(self.paths)
+
 
 class DagLink(object):
 	ZEROINSTALL_ALIASES = 'zeroinstall_aliases'
@@ -56,6 +108,18 @@ class DagLink(object):
 
 	def __init__(self, opts):
 		self.opts = opts
+		self._known_links = None
+	
+	def close(self):
+		if self._known_links is not None:
+			self._known_links.close()
+	
+	@property
+	def known_links(self):
+		if self._known_links is None:
+			path = os.path.expanduser('~/.config/daglink/known_links')
+			self._known_links = KnownLinks(path)
+		return self._known_links
 	
 	def load_file(self, filename):
 		with open(filename) as conffile:
@@ -94,35 +158,46 @@ class DagLink(object):
 		return (tags, aliases)
 
 	def _is_daglinked(self, file):
-		xattr(file).has_key(self.DAGLINK_XATTR_KEY)
+		return file in self.known_links and os.path.islink(file)
+		#TODO: once xattrs on symlinks work
+		#return os.path.islink(file) and xattr(file).has_key(self.DAGLINK_XATTR_KEY)
 
 	def _mark_daglinked(self, file):
-		xattr(file)[self.DAGLINK_XATTR_KEY] = self.DAGLINK_XATTR_VALUE
+		self.known_links.add(file)
+		#TODO: once xattrs on symlinks work
+		#if not self._is_daglinked(file):
+		#	xattr(file)[self.DAGLINK_XATTR_KEY] = self.DAGLINK_XATTR_VALUE
 	
 	def clean(self, conf):
 		for path in self._file_scan(conf):
 			if self._is_daglinked(path):
-				print "Found linked file at: %s" % (path,)
-				if self.opts.report:
-					self._report(path)
-				else:
-					self._remove(path)
+				self._remove(path)
 	
 	def _file_scan(self, conf):
-		if self.opts.quick:
-			for path, values in self.each_item(conf):
-				yield self._abs(path)
-		else:
-			for root, dirs, files in os.walk('/', followlinks=False):
-				for file in files:
-					path = os.path.join(root, file)
-					if os.path.islink(path):
-						yield self._abs(path)
+		for path, values in self.each_item(conf):
+			yield self._abs(path)
+		for path in self.known_links:
+			yield self._abs(path)
+		#TODO: once xattrs on symlinks work
+		#if self.opts.quick:
+		#  ^^ above code
+		#else:
+		#	for root, dirs, files in os.walk('/', followlinks=False):
+		#		for file in files:
+		#			path = os.path.join(root, file)
+		#			if os.path.islink(path):
+		#				yield self._abs(path)
 
 	def each_applicable_directive(self, conf, tags):
 		tags, aliases = self._load_meta(conf, tags)
 		def resolve(value):
 			return aliases.get(value, value)
+		def resolve_directive(directive):
+			try:
+				directive['uri'] = resolve(directive['uri'])
+			except KeyError: pass
+			return directive
+
 		def should_include_directive(directive):
 			directive_tags = directive.get('tags', '').split()
 			if not directive_tags:
@@ -140,7 +215,7 @@ class DagLink(object):
 					" ".join(all_tags),))
 				continue
 			path = self._abs(path)
-			yield path, values
+			yield path, map(resolve_directive, values)
 
 	def process(self, conf, tags):
 		skipped = []
@@ -158,7 +233,7 @@ class DagLink(object):
 							path,
 							"\n".join(map(repr, values)))
 					directive = values[0]
-					self._apply_directive(path, directive, resolve)
+					self._apply_directive(path, directive)
 			except Skipped:
 				skipped.append(path)
 				pass
@@ -174,16 +249,17 @@ class DagLink(object):
 			print "rm %s" % (path,)
 			return
 		self._run(['rm', path])
+		self.known_paths.remove(path)
 
 	def _report(self, path):
 		self._run(['ls','-l', path], try_root=False)
 	
-	def _apply_directive(self, path, directive, resolve):
+	def _apply_directive(self, path, directive):
 		local_path = directive.get('path', None)
 		if local_path:
 			target = local_path
 		else:
-			target = self._resolve_0install_path(resolve(directive['uri']), directive.get('extract', None))
+			target = self._resolve_0install_path(directive['uri'], directive.get('extract', None))
 		target = self._abs(target)
 		self._link(path, target)
 	
@@ -208,15 +284,18 @@ class DagLink(object):
 			self._permission('make directory at path %s' % (basedir,))
 			self._run(['mkdir', '-p', basedir])
 		assert os.path.exists(target), "ERROR: non-existant target: %s" % (target,)
-		if os.path.islink(path):
-			if os.readlink(path) == target:
-				logging.debug("link at %s already points to %s; nothing to do..." % (path, target))
-				return
-			self._run(['rm', path])
-		elif os.path.exists(path):
-			self._permission('remove existing contents at %s' % (path,))
-			self._run(['rm', '-rf', path])
-		self._run(['ln', '-s', target, path])
+		try:
+			if os.path.islink(path):
+				if os.readlink(path) == target:
+					logging.debug("link at %s already points to %s; nothing to do..." % (path, target))
+					return
+				self._run(['rm', path])
+			elif os.path.exists(path):
+				self._permission('remove existing contents at %s' % (path,))
+				self._run(['rm', '-rf', path])
+			self._run(['ln', '-s', target, path])
+		finally:
+			self._mark_daglinked(path)
 	
 	def _permission(self, msg):
 		if self.opts.force:
