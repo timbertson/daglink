@@ -48,10 +48,10 @@ You probably don't want to link the same things to the same places on every comp
 To specify multiple targets for a single location, use a list:
 
     /etc/path/to/wherever:
-      - path: ~/config/whatever-config
+      - path: ~/config/home-config
         tags: home
-      - path: ~/config/whatever-config
-        tags: home
+      - path: ~/config/work-config
+        tags: work
 
 **Note**: this will fail if more than one directive matches the provided set of tags, as that would be impossible to do.
 
@@ -120,8 +120,10 @@ For a complete example config, feel free to peek at my own configuration: &lt;ht
 			<h3 id="why-would-you-need-this">Why would you need this?</h3>
 			<ul>
 				<li>You have customised a lot of files in your system</li>
-				<li>you want to keep them in a central location, in order to:<ul><li>back them up easily</li><li>keep track of them</li><li>(maybe) version control them</li></ul></li>
-				<li>you want to link different things into different (or the same) locations depending on hostname<ul><li>e.g link a different /etc/apt.sources.list depending on distribution version</li></ul></li>
+				<li>you want to keep them in a central location, in order to:
+<ul><li>back them up easily</li><li>keep track of them</li><li>(maybe) version control them</li></ul></li>
+				<li>you want to link different things into different (or the same) locations depending on hostname
+<ul><li>e.g link a different /etc/apt.sources.list depending on distribution version</li></ul></li>
 				<li>you want a tool that is so meta, it can install itself</li>
 			</ul>
 			<h2 id="what-does-it-do">What does it do?</h2>
@@ -148,10 +150,10 @@ For a complete example config, feel free to peek at my own configuration: &lt;ht
 			<p>To specify multiple targets for a single location, use a list:</p>
 			<pre>
 				<code>/etc/path/to/wherever:
-  - path: ~/config/whatever-config
+  - path: ~/config/home-config
     tags: home
-  - path: ~/config/whatever-config
-    tags: home
+  - path: ~/config/work-config
+    tags: work
 </code>
 			</pre>
 			<p><strong>Note</strong>: this will fail if more than one directive matches the provided set of tags, as that would be impossible to do.</p>
@@ -204,7 +206,7 @@ For a complete example config, feel free to peek at my own configuration: &lt;ht
       - xkb
 </code>
 			</pre>
-			<p>For a complete example config, feel free to peek at my own configuration: <a href="https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml"><code>https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml</code></a></p>
+			<p>For a complete example config, feel free to peek at my own configuration: <a href="https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml"><code class="url">https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml</code></a></p>
 			<h2 id="usage">Usage:</h2>
 			<pre>
 				<code>0launch http://gfxmonk.net/dist/0install/daglink.xml --help
@@ -239,6 +241,10 @@ For a complete example config, feel free to peek at my own configuration: &lt;ht
 		<implementation id="sha1new=b86a70e09397528a4c86e67accfaa8bd54a9877e" released="2011-06-10" version="0.1.3">
 			<manifest-digest sha256="1b9182139b3c14e3e4b162d690dcd8052712ce7c98395a80cddc5a71fe54baad"/>
 			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.1.3.tgz" size="3099"/>
+		</implementation>
+		<implementation id="sha1new=a11612fac422fc051f4fc8eb46afedc72e240ec6" released="2012-01-22" version="0.2">
+			<manifest-digest sha256="f3c272e976b3fff1a8d3429c4bde5e8a2ed38f2be166f17cf069061382a618d1"/>
+			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.2.tgz" size="4015"/>
 		</implementation>
 	</group>
 </interface>
