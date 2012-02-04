@@ -320,7 +320,7 @@ class DagLink(object):
 		except subprocess.CalledProcessError:
 			if try_root:
 				self._permission('run "%s" as root' % (' '.join(cmd),))
-				subprocess.check_call(self._sudo_cmd() + ['--'] + cmd)
+				subprocess.check_call(self._sudo_cmd() + cmd)
 			else:
 				raise Skipped()
 
@@ -334,7 +334,7 @@ class DagLink(object):
 		if os.system('which pkexec >/dev/null 2>&1') == 0:
 			return ['pkexec']
 		else:
-			return ['gksudo']
+			return ['gksudo', '--']
 
 
 if __name__ == '__main__':
