@@ -250,5 +250,9 @@ For a complete example config, feel free to peek at my own configuration: &lt;ht
 			<manifest-digest sha256="4eccf14479eac7f19213696fccc3920bdd75f948c062d6c192c799caf9fb3da0"/>
 			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.2.1.tgz" size="4012"/>
 		</implementation>
+		<implementation id="sha1new=025f50c87186a27e74f5069210c55120578dfbac" released="2012-02-05" version="0.2.2">
+			<manifest-digest sha256="3a5abd3e9d8d2f890fcdd7f706e9a329bea70d8183abd8a236439b8c95e5de82"/>
+			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.2.2.tgz" size="4123"/>
+		</implementation>
 	</group>
 </interface>
