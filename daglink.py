@@ -169,17 +169,24 @@ class DagLink(object):
 		#	xattr(file)[self.DAGLINK_XATTR_KEY] = self.DAGLINK_XATTR_VALUE
 	
 	def clean(self, conf):
-		for path in self._file_scan(conf):
-			if self._is_daglinked(path):
+		skipped = set()
+		for path in self._each_daglinked(conf, quick=self.opts.quick):
+			try:
 				self._remove(path)
+			except Skipped:
+				skipped.add(path)
+				pass
+		if skipped:
+			logging.error("skipped %s paths:\n   %s" % (len(skipped),"\n   ".join(sorted(skipped))))
+			return len(skipped)
 	
-	def _file_scan(self, conf):
+	def _file_scan(self, conf, quick=None):
 		for path, values in self.each_item(conf):
 			yield self._abs(path)
 		for path in self.known_links:
 			yield self._abs(path)
 		#TODO: once xattrs on symlinks work
-		#if self.opts.quick:
+		#if self.quick
 		#  ^^ above code
 		#else:
 		#	for root, dirs, files in os.walk('/', followlinks=False):
@@ -217,11 +224,24 @@ class DagLink(object):
 			path = self._abs(path)
 			yield path, map(resolve_directive, values)
 
+	def _each_daglinked(self, conf, quick=None):
+		seen = set()
+		for path in self._file_scan(conf, quick=quick):
+			if self._is_daglinked(path):
+				if path in seen: continue
+				seen.add(path)
+				yield path
+
 	def process(self, conf, tags):
 		skipped = []
 		num_paths = 0
 
+		old_links = set(self._each_daglinked(conf, quick=True))
+
 		for path, values in self.each_applicable_directive(conf, tags):
+			try: old_links.remove(path)
+			except KeyError: pass
+
 			num_paths += 1
 			try:
 				if self.opts.report:
@@ -237,6 +257,12 @@ class DagLink(object):
 			except Skipped:
 				skipped.append(path)
 				pass
+		for path in sorted(old_links):
+			try:
+				self._remove(path)
+			except Skipped:
+				skipped.add(path)
+				pass
 		logging.info("%s paths successfully processed" % (num_paths,))
 		if skipped:
 			logging.error("skipped %s paths:\n   %s" % (len(skipped),"\n   ".join(skipped)))
@@ -249,7 +275,7 @@ class DagLink(object):
 			print "rm %s" % (path,)
 			return
 		self._run(['rm', path])
-		self.known_paths.remove(path)
+		self.known_links.remove(path)
 
 	def _report(self, path):
 		self._run(['ls','-l', path], try_root=False)
