@@ -6,13 +6,6 @@ from optparse import OptionParser
 from operator import methodcaller as method
 import logging
 
-def xattr(*a, **k):
-	try:
-		import xattr
-		return xattr.xattr(*a, options=xattr.XATTR_NOFOLLOW, **k)
-	except ImportError:
-		raise RuntimeError("xattr not found: TODO: implement --disable-xattr")
-
 def main():
 	p = OptionParser(usage='%prog [options] [tag1 [tag2 [...]]]')
 	p.add_option('-c', '--config', default=os.path.expanduser('~/.config/daglink/links.yml'), help="config YAML file (default=%default)")
@@ -24,8 +17,8 @@ def main():
 	p.add_option('--info', action='store_const', dest='log_level', default=logging.INFO, const=logging.INFO, help='info log level (the default)')
 	p.add_option('-n', '--dry-run', action='store_true', help='print all links that would be created')
 	p.add_option('-r', '--report', action='store_true', help='run ls -l on all paths')
-	p.add_option('--clean', action='store_true', help='thoroughly clean all links that daglink has ever created (warning: scans entire hard drive unless --quick is also specified)')
-	p.add_option('--quick', action='store_true', help='when supplied with --clean, only check paths listed in the current config')
+	p.add_option('--clean', action='store_true', help='clean all links that daglink has ever created')
+	p.add_option('--quick', action='store_true', help='currently makes no difference')
 	p.add_option('--sudo', help='sudo implementation (e.g sudo, pkexec, gksudo)', default=None)
 	p.add_option('-b', '--base', help='base directory')
 	opts, tags = p.parse_args()
@@ -103,8 +96,6 @@ class DagLink(object):
 	ZEROINSTALL_ALIASES = 'zeroinstall_aliases'
 	DEFAULT_TAGS = 'default_tags'
 	BASEDIR = 'basedir'
-	DAGLINK_XATTR_KEY = 'user.net.gfxmonk.daglink.islink'
-	DAGLINK_XATTR_VALUE = 'true'
 
 	def __init__(self, opts):
 		self.opts = opts
@@ -159,14 +150,9 @@ class DagLink(object):
 
 	def _is_daglinked(self, file):
 		return file in self.known_links and os.path.islink(file)
-		#TODO: once xattrs on symlinks work
-		#return os.path.islink(file) and xattr(file).has_key(self.DAGLINK_XATTR_KEY)
 
 	def _mark_daglinked(self, file):
 		self.known_links.add(file)
-		#TODO: once xattrs on symlinks work
-		#if not self._is_daglinked(file):
-		#	xattr(file)[self.DAGLINK_XATTR_KEY] = self.DAGLINK_XATTR_VALUE
 	
 	def clean(self, conf):
 		skipped = set()
@@ -185,15 +171,6 @@ class DagLink(object):
 			yield self._abs(path)
 		for path in self.known_links:
 			yield self._abs(path)
-		#TODO: once xattrs on symlinks work
-		#if self.quick
-		#  ^^ above code
-		#else:
-		#	for root, dirs, files in os.walk('/', followlinks=False):
-		#		for file in files:
-		#			path = os.path.join(root, file)
-		#			if os.path.islink(path):
-		#				yield self._abs(path)
 
 	def each_applicable_directive(self, conf, tags):
 		tags, aliases = self._load_meta(conf, tags)
