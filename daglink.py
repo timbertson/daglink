@@ -210,7 +210,7 @@ class DagLink(object):
 				yield path
 
 	def process(self, conf, tags):
-		skipped = []
+		skipped = set()
 		num_paths = 0
 
 		old_links = set(self._each_daglinked(conf, quick=True))
@@ -232,7 +232,7 @@ class DagLink(object):
 					directive = values[0]
 					self._apply_directive(path, directive)
 			except Skipped:
-				skipped.append(path)
+				skipped.add(path)
 				pass
 		for path in sorted(old_links):
 			try:
@@ -242,7 +242,7 @@ class DagLink(object):
 				pass
 		logging.info("%s paths successfully processed" % (num_paths,))
 		if skipped:
-			logging.error("skipped %s paths:\n   %s" % (len(skipped),"\n   ".join(skipped)))
+			logging.error("skipped %s paths:\n   %s" % (len(skipped),"\n   ".join(sorted(skipped))))
 			return len(skipped)
 		else:
 			os.utime(self.opts.config, None)
