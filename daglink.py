@@ -255,7 +255,7 @@ class DagLink(object):
 		self.known_links.remove(path)
 
 	def _report(self, path):
-		self._run(['ls','-l', path], try_root=False)
+		self._run(['ls','-ld', path], try_root=False)
 	
 	def _apply_directive(self, path, directive):
 		local_path = directive.get('path', None)
