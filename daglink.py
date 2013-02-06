@@ -114,7 +114,7 @@ class DagLink(object):
 	
 	def load_file(self, filename):
 		with open(filename) as conffile:
-			return yaml.load(conffile.read())
+			return yaml.safe_load(conffile.read())
 
 	def process_file(self, filename, tags):
 		self.process(self.load_file(filename), tags)
