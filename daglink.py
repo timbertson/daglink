@@ -164,7 +164,6 @@ class DagLink(object):
 				tags = default_tags.get(hostname, [])
 
 		logging.info("using tags: %s" % (" ".join(sorted(tags)),))
-		sys.exit(1)
 
 		if basedir:
 			logging.debug("using basedir: %s" % (basedir,))
