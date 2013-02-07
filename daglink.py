@@ -159,7 +159,7 @@ class DagLink(object):
 		# DEPRECATED tags use (TODO: remove me)
 		default_tags = meta.get(self.DEFAULT_TAGS, None)
 		if default_tags:
-			logging.warn("The default_tags meta section is deprecated. See #TODO...")
+			logging.warn("The default_tags meta section is deprecated. See https://github.com/gfxmonk/daglink/commit/0cd4b3188d3347d2275f0e6e56f954307a3f0ac3")
 			if len(tags) == 0:
 				tags = default_tags.get(hostname, [])
 
