@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-import os, sys
+import os, sys, re
 import subprocess
 import yaml
 from optparse import OptionParser
 from operator import methodcaller as method
 import logging
+import platform
 
 def main():
 	p = OptionParser(usage='%prog [options] [tag1 [tag2 [...]]]')
@@ -96,6 +97,7 @@ class DagLink(object):
 	ZEROINSTALL_ALIASES = 'zeroinstall_aliases'
 	DEFAULT_TAGS = 'default_tags'
 	BASEDIR = 'basedir'
+	HOST_INFO = 'hosts'
 
 	def __init__(self, opts):
 		self.opts = opts
@@ -133,15 +135,36 @@ class DagLink(object):
 		aliases = meta.get(self.ZEROINSTALL_ALIASES, {})
 		config_basedir = meta.get(self.BASEDIR, None)
 		basedir = self.opts.base or config_basedir
+		hostname = platform.node()
 
+		host_info = meta.get(self.HOST_INFO, None)
+		if host_info:
+			found = None
+			for name, details in host_info.items():
+				regex = details.get('regex', None)
+				if regex and re.match(regex, hostname):
+					logging.debug("hostname (%s) matches regex (%s)", hostname, regex)
+					found = details
+					break
+
+				if name and name == hostname:
+					logging.debug("matched exact hostname %s", name)
+					found = details
+					break
+
+			if found is not None:
+				if len(tags) == 0:
+					tags = set(found.get('tags', []))
+
+		# DEPRECATED tags use (TODO: remove me)
 		default_tags = meta.get(self.DEFAULT_TAGS, None)
-		if len(tags) == 0 and default_tags:
-			import platform
-			hostname = platform.node()
-			hostname_tags = default_tags.get(hostname, None)
-			if hostname_tags:
-				tags = set(hostname_tags)
+		if default_tags:
+			logging.warn("The default_tags meta section is deprecated. See #TODO...")
+			if len(tags) == 0:
+				tags = default_tags.get(hostname, [])
+
 		logging.info("using tags: %s" % (" ".join(sorted(tags)),))
+		sys.exit(1)
 
 		if basedir:
 			logging.debug("using basedir: %s" % (basedir,))

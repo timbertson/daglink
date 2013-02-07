@@ -92,13 +92,18 @@ If you don't specify --basedir, daglink will take the base directory form the me
 If you want to use daglink to update your symlinks automaically, you'll want to put per-machine tags in your config. These tags are only used if you don't specify any tags on the command line itself:
 
     meta:
-      default_tags:
-        host1:
-          - ubuntu-maverick
-          - xmodmap
-        host2:
-          - fedora-15
-          - xkb
+      hosts:
+        hostname_1:
+          tags:
+            - ubuntu-maverick
+            - xmodmap
+        fedora_hosts:
+          regex: "fed.*"
+          tags:
+            - fedora-15
+            - xkb
+
+The `regex` value, if present, will take precedence over the default exact hostname matching.
 
 For a complete example config, feel free to peek at my own configuration: <https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml>
 
