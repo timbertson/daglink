@@ -3,6 +3,7 @@
 <interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface" uri="http://gfxmonk.net/dist/0install/daglink.xml">
 	<name>daglink</name>
 	<summary>symlink management</summary>
+	<publish xmlns="http://gfxmonk.net/dist/0install" mode="featured"/>
 	<description>
 # daglink
 ..because trees are boring
@@ -258,13 +259,17 @@ For a complete example config, feel free to peek at my own configuration: &lt;ht
 			<manifest-digest sha256="0de5f66709aa12aefabe10231fa813f7e663164b2c4e0eb6957b56ab96b479c6"/>
 			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.2.3.tgz" size="3765"/>
 		</implementation>
-		<implementation id="sha1new=1d30969cd891634df36b1b314b9e0e1225a6a76b" released="2013-02-07" version="0.3" stability="buggy">
+		<implementation id="sha1new=1d30969cd891634df36b1b314b9e0e1225a6a76b" released="2013-02-07" stability="buggy" version="0.3">
 			<manifest-digest sha256="75612cb1c211e4e747e87712dc193ea00fd818133c850c6cc42809b485177bcc"/>
 			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.3.tgz" size="4049"/>
 		</implementation>
 		<implementation id="sha1new=8acdd1280f1e7eb3b1980bb812725a1a7bce5ddc" released="2013-02-08" version="0.3.1">
 			<manifest-digest sha256="5d95c6c05fcde104a12e8d000ef5ae60ee3baae48efefce70fccc832b9d3ad15"/>
 			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.3.1.tgz" size="4043"/>
+		</implementation>
+		<implementation id="sha1new=d95eb33e6765d8aef35ddd5bebbfac8fcdd226a7" released="2013-03-29" version="0.3.2">
+			<manifest-digest sha256new="WKDJXGYPQAFYU3MMPII34I2XL24MGIBNDIXXR2XKHGBSMCFT2HSA"/>
+			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.3.2.tgz" size="4116"/>
 		</implementation>
 	</group>
 </interface>
