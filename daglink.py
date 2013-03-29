@@ -285,6 +285,9 @@ class DagLink(object):
 			target = local_path
 		else:
 			target = self._resolve_0install_path(directive['uri'], directive.get('extract', None))
+			if target is None:
+				logging.error("Can't update %s: it belongs to a package implementation", path)
+				raise Skipped()
 		target = self._abs(target)
 		self._link(path, target)
 	
@@ -292,7 +295,8 @@ class DagLink(object):
 		import zerofind
 		#TODO: check for updates?
 		path = zerofind.find(uri)
-		assert path
+		if path is None:
+			return path
 		if extract:
 			path = os.path.join(path, *extract.split('/'))
 		return path
@@ -365,8 +369,8 @@ class DagLink(object):
 if __name__ == '__main__':
 	try:
 		sys.exit(main())
-	except AssertionError, e:
-		print >> sys.stderr, e
+	except AssertionError as e:
+		print >> sys.stderr, "%s: %s" % (type(e).__name__, e)
 		sys.exit(1)
 	except KeyboardInterrupt:
 		sys.exit(1)
