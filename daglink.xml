@@ -271,6 +271,10 @@ For a complete example config, feel free to peek at my own configuration: &lt;ht
 			<manifest-digest sha256new="WKDJXGYPQAFYU3MMPII34I2XL24MGIBNDIXXR2XKHGBSMCFT2HSA"/>
 			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.3.2.tgz" size="4116"/>
 		</implementation>
+		<implementation id="sha1new=57e4686b50038c98ca75d776fb68ae25c740bb56" released="2013-06-17" version="0.4">
+			<manifest-digest sha256new="HFBDIFLTODMVAQ3Y5V7NPR4KCYMEGKD56PBY7IMVAXRLZHU4WMIQ"/>
+			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.4.tgz" size="4116"/>
+		</implementation>
 	</group>
 	<group main="daglink.py">
 		<command name="run" path="daglink.py">
@@ -285,6 +289,5 @@ For a complete example config, feel free to peek at my own configuration: &lt;ht
 		</requires>
 		<environment insert="" mode="prepend" name="PYTHONPATH"/>
 		<environment insert="" mode="prepend" name="PATH"/>
-		<implementation id="." version="0.2.1"/>
 	</group>
 </interface>
