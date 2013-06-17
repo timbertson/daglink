@@ -272,4 +272,19 @@ For a complete example config, feel free to peek at my own configuration: &lt;ht
 			<archive href="http://gfxmonk.net/dist/0install/daglink/daglink-0.3.2.tgz" size="4116"/>
 		</implementation>
 	</group>
+	<group main="daglink.py">
+		<command name="run" path="daglink.py">
+			<runner interface="http://repo.roscidus.com/python/python">
+				<version before="3"/>
+			</runner>
+		</command>
+		<requires interface="http://gfxmonk.net/dist/0install/pyyaml-python2.xml"/>
+		<requires interface="http://gfxmonk.net/dist/0install/python-which.xml"/>
+		<requires interface="http://gfxmonk.net/dist/0install/0find.xml">
+			<version not-before="0.1.3"/>
+		</requires>
+		<environment insert="" mode="prepend" name="PYTHONPATH"/>
+		<environment insert="" mode="prepend" name="PATH"/>
+		<implementation id="." version="0.2.1"/>
+	</group>
 </interface>

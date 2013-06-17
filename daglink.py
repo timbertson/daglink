@@ -360,10 +360,12 @@ class DagLink(object):
 			return self._graphical_sudo()
 	
 	def _graphical_sudo(self):
-		if os.system('which pkexec >/dev/null 2>&1') == 0:
+		import which
+		if which.whichall('pkexec'):
 			return ['pkexec']
-		else:
+		elif which.whichall('gksudo'):
 			return ['gksudo', '--']
+		return ['sudo', '--']
 
 
 if __name__ == '__main__':
