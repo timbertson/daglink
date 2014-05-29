@@ -248,9 +248,10 @@ class DagLink(object):
 					self._report(path)
 					continue
 				else:
-					assert len(values) == 1, "Too many applicable directives for path %s:\n%s" % (
-							path,
-							"\n".join(map(repr, values)))
+					assert len(values) == 1, "\n - ".join(
+								["Too many applicable directives for path %s:" % (path,)]
+								+ list(map(repr, values))
+					)
 					directive = values[0]
 					self._apply_directive(path, directive)
 			except Skipped:
