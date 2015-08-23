@@ -290,7 +290,7 @@ class DagLink(object):
 				logging.error("Can't update %s: it belongs to a package implementation", path)
 				raise Skipped()
 		target = self._abs(target)
-		self._link(path, target)
+		self._link(path, target, directive)
 	
 	def _resolve_0install_path(self, uri, extract=None):
 		import zerofind
@@ -305,7 +305,7 @@ class DagLink(object):
 	def _abs(self, path):
 		return os.path.abspath(os.path.expanduser(path))
 
-	def _link(self, path, target):
+	def _link(self, path, target, directive):
 		if self.opts.dry_run:
 			print "%s -> %s" % (path, target)
 			return
@@ -313,7 +313,9 @@ class DagLink(object):
 		if not os.path.exists(basedir):
 			self._permission('make directory at path %s' % (basedir,))
 			self._run(['mkdir', '-p', basedir])
-		assert os.path.exists(target), "ERROR: non-existant target: %s" % (target,)
+		if not os.path.exists(target):
+			assert directive.get('optional', False) is True, "ERROR: non-existant target: %s\n (add `optional: true` to this entry if it can be skipped)" % (target,)
+			logging.warn("Linking to missing target %s" % (target,))
 		try:
 			if os.path.islink(path):
 				if os.readlink(path) == target:
