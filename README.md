@@ -1,6 +1,8 @@
 # daglink
 ..because trees are boring
 
+<img src="http://gfxmonk.net/dist/status/project/daglink.png">
+
 ### Why would you need this?
 
  - You have customised a lot of files in your system
