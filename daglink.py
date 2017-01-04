@@ -363,10 +363,10 @@ class DagLink(object):
 			return self._graphical_sudo()
 	
 	def _graphical_sudo(self):
-		import which
-		if which.whichall('pkexec'):
+		from whichcraft import which
+		if which('pkexec'):
 			return ['pkexec']
-		elif which.whichall('gksudo'):
+		elif which('gksudo'):
 			return ['gksudo', '--']
 		return ['sudo', '--']
 
