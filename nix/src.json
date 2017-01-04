@@ -1,0 +1,14 @@
+{
+  "inputs": {
+    "owner": "timbertson",
+    "repo": "daglink",
+    "rev": "version-0.5",
+    "version": "0.5"
+  },
+  "params": {
+    "owner": "timbertson",
+    "repo": "daglink",
+    "rev": "version-0.5",
+    "sha256": "0md8jwmxyvyakyqmkr4jivphakgq932nfqn6y6zr5h2n4zpcjb1b"
+  }
+}
