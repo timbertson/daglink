@@ -10,5 +10,5 @@ setup(
 	name='daglink',
 	py_modules=['daglink'],
 	url='https://github.com/timbertson/daglink',
-	version='0.4-post',
+	version='0.6',
 )
