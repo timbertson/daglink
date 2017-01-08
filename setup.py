@@ -9,6 +9,9 @@ setup(
 	long_description='',
 	name='daglink',
 	py_modules=['daglink'],
+	data_files = [
+		('share/applications', ['daglink-update.desktop']),
+	],
 	url='https://github.com/timbertson/daglink',
 	version='0.6',
 )

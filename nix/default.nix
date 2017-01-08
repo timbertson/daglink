@@ -5,4 +5,7 @@ pythonPackages.buildPythonPackage {
   version = srcJSON.inputs.version;
   src = fetchFromGitHub srcJSON.params;
   propagatedBuildInputs = with pythonPackages; [ pyyaml whichcraft ];
+  postInstall = ''
+    substituteInPlace $out/share/applications/daglink-update.desktop --replace 'daglink -f' "$out/bin/daglink -f"
+  '';
 }

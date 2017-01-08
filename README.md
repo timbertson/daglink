@@ -51,36 +51,9 @@ To specify multiple targets for a single location, use a list:
 
 **Note**: this will fail if more than one directive matches the provided set of tags, as that would be impossible to do.
 
-### zero install
-
-If you love zero-install (I do), you can use daglink to make sure a location contains the latest version of a given feed. For example, you can add daglink itself to run whenever you login with this rather self-referential entry:
-
-    ~/.config/autostart/daglink-update.desktop:
-      uri: http://gfxmonk.net/dist/0install/daglink.xml
-      extract: daglink-update.desktop
-
-Since you can't provide command-line arguments to that startup item, you will also need to make sure your config file can be found at `~/.config/daglink/links.yml`. By now you can probably guess how I suggest you do that:
-
-    ~/.config/daglink/links.yml:
-      path: links.yml
-
-The beauty of this is that if you have a development version of daglink registered for that interface it will be used, otherwise it'll be cached from the internet and updated periodically, just like any other zero install feed. There aren't many cases where it's a good idea to keep symlinks of 0install implementations around, but I think symlinks to desktop items can be quite useful - especially if you want to take this configuration to a new machine.
-
 ## Meta:
 
 You can provide more than just paths in the configuration. There is a `meta` section which allows you to specify:
-
-#### zero install aliases
-
-If you're going to use the same uri over and over again, this allows you to define an alias. E.g:
-
-    meta:
-      zeroinstall_aliases:
-        config: http://example.com/0install/my-config.xml
-
-    ~/.vimrc:
-      uri: config
-      extract: vimrc
 
 #### default basedir
 
@@ -108,7 +81,3 @@ If you want to use daglink to update your symlinks automaically, you'll want to 
 The `regex` value, if present, will take precedence over the default exact hostname matching.
 
 For a complete example config, feel free to peek at my own configuration: <https://github.com/gfxmonk/app-customisations/blob/master/meta/links.yml>
-
-## Usage:
-
-    0launch http://gfxmonk.net/dist/0install/daglink.xml --help
