@@ -167,6 +167,8 @@ class DagLink(object):
 
 		if basedir:
 			logging.debug("using basedir: %s" % (basedir,))
+			# TODO: it's probably better to integrate basedir into file ops, instead of chdir
+			self.opts.config = os.path.abspath(self.opts.config)
 			os.chdir(os.path.expanduser(basedir))
 		return (tags, aliases)
 
@@ -174,6 +176,8 @@ class DagLink(object):
 		return file in self.known_links and os.path.islink(file)
 
 	def _mark_daglinked(self, file):
+		if self.opts.dry_run:
+			return
 		self.known_links.add(file)
 	
 	def clean(self, conf):
@@ -306,9 +310,6 @@ class DagLink(object):
 		return os.path.abspath(os.path.expanduser(path))
 
 	def _link(self, path, target, directive):
-		if self.opts.dry_run:
-			print "%s -> %s" % (path, target)
-			return
 		basedir = os.path.dirname(path)
 		if not os.path.exists(basedir):
 			self._permission('make directory at path %s' % (basedir,))
@@ -318,9 +319,11 @@ class DagLink(object):
 			logging.warn("Linking to missing target %s" % (target,))
 		try:
 			if os.path.islink(path):
-				if os.readlink(path) == target:
+				current_dest = os.readlink(path)
+				if current_dest == target:
 					logging.debug("link at %s already points to %s; nothing to do..." % (path, target))
 					return
+				logging.debug("link at %s points to %s; changing to %s", path, current_dest, target)
 				self._run(['rm', path])
 			elif os.path.exists(path):
 				self._permission('remove existing contents at %s' % (path,))
@@ -330,6 +333,9 @@ class DagLink(object):
 			self._mark_daglinked(path)
 	
 	def _permission(self, msg):
+		if self.opts.dry_run:
+			print "(permission required: %s)" % (msg,)
+			return
 		if self.opts.force:
 			return
 		if self.opts.interactive:
@@ -347,6 +353,9 @@ class DagLink(object):
 
 	def _run(self, cmd, try_root=True):
 		cmd = list(cmd)
+		if self.opts.dry_run:
+			print " + %s" % (" ".join(cmd))
+			return
 		try:
 			subprocess.check_call(cmd, stderr=open(os.devnull))
 		except subprocess.CalledProcessError:
