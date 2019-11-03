@@ -1,9 +1,8 @@
-{ lib, pythonPackages, fetchFromGitHub }:
-let srcJSON = lib.importJSON ./src.json; in
+{ lib, pythonPackages, }:
 pythonPackages.buildPythonPackage {
   name = "daglink";
-  version = srcJSON.inputs.version;
-  src = fetchFromGitHub srcJSON.params;
+  version = lib.fileContents ../VERSION;
+  src = ../.;
   propagatedBuildInputs = with pythonPackages; [ pyyaml whichcraft ];
   postInstall = ''
     substituteInPlace $out/share/applications/daglink-update.desktop --replace 'daglink -f' "$out/bin/daglink -f"
