@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os, sys, re
 import subprocess
 import yaml
@@ -35,7 +35,7 @@ def main():
 				for directive in vals:
 					if 'tags' in directive:
 						tags.update(directive['tags'].split())
-			print "\n".join(sorted(tags))
+			print("\n".join(sorted(tags)))
 		elif opts.clean:
 			return dag.clean(conf)
 		else:
@@ -84,7 +84,7 @@ class KnownLinks(object):
 	def write(self):
 		lines = sorted(self.paths)
 		logging.debug("writing %s paths to known_links" % (len(self.paths),))
-		print >> self.file, ('\n'.join(lines))
+		print(('\n'.join(lines)), file=self.file)
 	
 	def __iter__(self):
 		return iter(self.paths)
@@ -276,7 +276,7 @@ class DagLink(object):
 
 	def _remove(self, path):
 		if self.opts.dry_run:
-			print "rm %s" % (path,)
+			print("rm %s" % (path,))
 			return
 		self._run(['rm', path])
 		self.known_links.remove(path)
@@ -334,7 +334,7 @@ class DagLink(object):
 	
 	def _permission(self, msg):
 		if self.opts.dry_run:
-			print "(permission required: %s)" % (msg,)
+			print("(permission required: %s)" % (msg,))
 			return
 		if self.opts.force:
 			return
@@ -348,13 +348,13 @@ class DagLink(object):
 	def _prompt(self, msg):
 		if not self.opts.interactive:
 			return False
-		print >> sys.stderr, msg + "? [Y/n] ",
+		print(msg + "? [Y/n] ", file=sys.stderr, end='')
 		return raw_input().strip().lower() in ('','y','yes','ok')
 
 	def _run(self, cmd, try_root=True):
 		cmd = list(cmd)
 		if self.opts.dry_run:
-			print " + %s" % (" ".join(cmd))
+			print(" + %s" % (" ".join(cmd)))
 			return
 		try:
 			subprocess.check_call(cmd, stderr=open(os.devnull))
@@ -384,7 +384,7 @@ if __name__ == '__main__':
 	try:
 		sys.exit(main())
 	except AssertionError as e:
-		print >> sys.stderr, "%s: %s" % (type(e).__name__, e)
+		print("%s: %s" % (type(e).__name__, e), file=sys.stderr)
 		sys.exit(1)
 	except KeyboardInterrupt:
 		sys.exit(1)
