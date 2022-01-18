@@ -13,5 +13,5 @@ setup(
 		('share/applications', ['daglink-update.desktop']),
 	],
 	url='https://github.com/timbertson/daglink',
-	version='0.6',
+	version='0.7',
 )
